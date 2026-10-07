@@ -49,7 +49,7 @@ pipeline {
                 }
             }
         }
-    }    
+
         stage('Prepare Kubernetes Manifest') {
             steps {
                 withCredentials([
@@ -58,23 +58,25 @@ pipeline {
                         usernameVariable: 'AWS_ACCESS_KEY_ID',
                         passwordVariable: 'AWS_SECRET_ACCESS_KEY'
                     )
-            ]) {
-            sh '''
-                AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+                ]) {
+                    sh '''
+                        AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 
-                ECR_REGISTRY=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+                        ECR_REGISTRY=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
 
-                IMAGE_URI=${ECR_REGISTRY}/${ECR_REPO}:${IMAGE_TAG}
+                        IMAGE_URI=${ECR_REGISTRY}/${ECR_REPO}:${IMAGE_TAG}
 
-                sed "s|IMAGE_PLACEHOLDER|${IMAGE_URI}|g" \
-                k8s/deployment.yaml > k8s/deployment-rendered.yaml
+                        sed "s|IMAGE_PLACEHOLDER|${IMAGE_URI}|g" \
+                        k8s/deployment.yaml > k8s/deployment-rendered.yaml
 
-                echo "Kubernetes image:"
-                grep "image:" k8s/deployment-rendered.yaml
-            '''
+                        echo "Kubernetes image:"
+                        grep "image:" k8s/deployment-rendered.yaml
+                    '''
+                }
+            }
         }
     }
-}   
+
     post {
         success {
             echo 'CI pipeline completed successfully!'
