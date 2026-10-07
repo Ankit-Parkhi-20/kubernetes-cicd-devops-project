@@ -20,10 +20,12 @@ spec:
     spec:
       containers:
         - name: devops-k8s-demo
-          image: IMAGE_PLACEHOLDER 
-          env: 
-          -name: APP_VERSION
-          value: "1.0.0"    
+          image: IMAGE_PLACEHOLDER
+
+          env:
+            - name: APP_VERSION
+              value: "1.0.0"
+
           ports:
             - containerPort: 5000
 

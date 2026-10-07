@@ -1,0 +1,15 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: devops-k8s-demo
+  region: ap-southeast-1
+  version: "1.36"
+
+managedNodeGroups:
+  - name: devops-workers
+    instanceType: t3.small
+    minSize: 1
+    maxSize: 1
+    desiredCapacity: 1
+    volumeSize: 20
