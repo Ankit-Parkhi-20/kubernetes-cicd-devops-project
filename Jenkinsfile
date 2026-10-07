@@ -19,18 +19,18 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh '''
-                    docker build \
-                    -t ${ECR_REPO}:${IMAGE_TAG} .
-                '''
+                sh 'docker build -t ${ECR_REPO}:${IMAGE_TAG} .'
             }
         }
 
         stage('Push to ECR') {
             steps {
                 withCredentials([
-                    [$class: 'AmazonWebServicesCredentialsBinding',
-                     credentialsId: 'aws-ecr-credentials']
+                    usernamePassword(
+                        credentialsId: 'aws-ecr-credentials',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
                 ]) {
                     sh '''
                         AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
@@ -53,7 +53,7 @@ pipeline {
 
     post {
         success {
-            echo 'CI/CD image build and ECR push completed successfully!'
+            echo 'CI pipeline completed successfully!'
         }
 
         failure {
