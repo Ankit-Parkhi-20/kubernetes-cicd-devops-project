@@ -1,13 +1,13 @@
 pipeline {
     agent any
 
-    stages {
+    environment {
+        AWS_REGION = 'ap-south-2'
+        ECR_REPO = 'devops-k8s-demo'
+        IMAGE_TAG = "${BUILD_NUMBER}"
+    }
 
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
+    stages {
 
         stage('Test') {
             steps {
@@ -19,14 +19,41 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t devops-k8s-demo:1.0 .'
+                sh '''
+                    docker build \
+                    -t ${ECR_REPO}:${IMAGE_TAG} .
+                '''
+            }
+        }
+
+        stage('Push to ECR') {
+            steps {
+                withCredentials([
+                    [$class: 'AmazonWebServicesCredentialsBinding',
+                     credentialsId: 'aws-ecr-credentials']
+                ]) {
+                    sh '''
+                        AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+
+                        ECR_REGISTRY=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+
+                        aws ecr get-login-password --region ${AWS_REGION} | \
+                        docker login --username AWS --password-stdin ${ECR_REGISTRY}
+
+                        docker tag ${ECR_REPO}:${IMAGE_TAG} \
+                        ${ECR_REGISTRY}/${ECR_REPO}:${IMAGE_TAG}
+
+                        docker push \
+                        ${ECR_REGISTRY}/${ECR_REPO}:${IMAGE_TAG}
+                    '''
+                }
             }
         }
     }
 
     post {
         success {
-            echo 'CI pipeline completed successfully!'
+            echo 'CI/CD image build and ECR push completed successfully!'
         }
 
         failure {
